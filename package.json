@@ -1,6 +1,6 @@
 {
   "name": "frictionless-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "SOI Investment Allocator — backend API (NestJS + yahoo-finance2)",
   "homepage": "https://github.com/youmengh/frictionless-api#readme",
   "bugs": {
