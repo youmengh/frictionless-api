@@ -4,12 +4,9 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
 import { FundData, InstrumentType } from './fund-data.interface';
 import { PROXY_OVERRIDES } from './proxy-overrides';
-
-// Silence yahoo-finance2's noisy one-time console notices.
-yahooFinance.suppressNotices(['yahooSurvey', 'ripHistorical']);
 
 /** Don't let Yahoo's strict schema validation throw on minor field drift. */
 const MODULE_OPTS = { validateResult: false } as const;
@@ -49,6 +46,19 @@ export class YahooFinanceService {
   private readonly logger = new Logger(YahooFinanceService.name);
 
   /**
+   * Single long-lived client. v3 is class-based: one instance keeps an
+   * in-memory cookie jar + crumb and a request queue across calls — exactly
+   * what a long-running server wants, and what fixes the spurious 429s older
+   * versions hit because their cookie/crumb handshake was out of date.
+   * `suppressNotices` / `validation` are now constructor options (not methods).
+   */
+  private readonly yf = new YahooFinance({
+    suppressNotices: ['yahooSurvey', 'ripHistorical'],
+    validation: { logErrors: false, logOptionsErrors: false },
+    versionCheck: false,
+  });
+
+  /**
    * Fetch and fully resolve one instrument. Throws NotFoundException if Yahoo
    * doesn't recognize the symbol (used by the add/validate flow).
    */
@@ -60,7 +70,7 @@ export class YahooFinanceService {
 
     let summary: any;
     try {
-      summary = await yahooFinance.quoteSummary(
+      summary = await this.yf.quoteSummary(
         symbol,
         {
           modules: [
@@ -193,7 +203,7 @@ export class YahooFinanceService {
 
     let chart: any;
     try {
-      chart = await yahooFinance.chart(
+      chart = await this.yf.chart(
         symbol,
         { period1, period2, interval: '1mo' },
         MODULE_OPTS,

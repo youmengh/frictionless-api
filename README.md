@@ -87,12 +87,19 @@ the corrected §8 universe as a β = 1 regression anchor.
   degrades gracefully (partial data, never a crash). Per spec guidance there is
   **no retry logic** — a 429 surfaces as a clean 503 (“busy, retry shortly”)
   rather than masquerading as a “symbol not found”.
-- `yahoo-finance2` is pinned to `2.13.3` — the `2.14.x` line is ESM-only and
-  breaks CommonJS resolution.
+- `yahoo-finance2` is on **`^3.15.2`** (latest). v3 is **class-based**: we create
+  one `new YahooFinance({ … })` in `YahooFinanceService` and reuse it, so the
+  in-memory cookie jar + crumb and the request queue are shared across calls.
+  `suppressNotices` and `validation` are now **constructor options** (not the v2
+  `yahooFinance.suppressNotices(…)` method). v3 is dual CJS/ESM, so it resolves
+  cleanly under our CommonJS build — unlike the ESM-only `2.14.x` line.
 
-## Known limitation in this environment
+## Rate-limiting (`503`) — usually a stale-version problem
 
-If the host IP is shared/flagged, Yahoo may throttle (`429`) every request and
-all live fetches return `503`. That’s an upstream rate-limit, not a bug — the
-allocate math and all error handling still work; live fetches succeed from a
-normal residential/office IP.
+If `GET /api/funds/validate` returns
+`503 "Yahoo Finance is rate-limiting requests right now"`, the usual cause is an
+**out-of-date `yahoo-finance2`** whose cookie/crumb handshake no longer matches
+Yahoo’s current auth flow — so even your first request of the day looks
+unauthenticated and gets a `429`. Upgrading to the latest version (done) fixes
+it. A genuine `429` can still happen under heavy bursts; there is intentionally
+**no retry** (per spec) — wait a moment and retry.
