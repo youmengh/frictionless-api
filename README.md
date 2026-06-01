@@ -16,8 +16,9 @@ npm run build && npm start
 - **Swagger UI (interactive “try it out”): `http://localhost:3001/api/docs`**
 - Unit tests: `npm test`
 
-Environment variables are optional (sensible defaults are baked in). See
-`.env.example`: `PORT` (3001), `CORS_ORIGIN` (http://localhost:5173),
+Environment variables are all optional — sensible defaults are baked in, so no
+`.env` file is required to run. To override a default, copy `.env.example` to
+`.env` and edit it: `PORT` (3001), `CORS_ORIGIN` (http://localhost:5173),
 `CACHE_TTL_MINUTES` (60).
 
 ## The SOI formula (v2)
